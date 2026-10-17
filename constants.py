@@ -2,15 +2,15 @@
 
 MAIN_REACTIONS = {
     'fire': {
-        'service_id': 436,
+        'service_id': 268,
         'reaction': '🔥'
     },
     'heart': {
-        'service_id': 437,
+        'service_id': 145,
         'reaction': '❤️'
     },
     'like': {
-        'service_id': 438,
+        'service_id': 240,
         'reaction': '👍'
     }
 }

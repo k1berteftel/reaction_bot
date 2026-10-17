@@ -74,7 +74,7 @@ async def get_account_balance() -> float:
 async def testing():
     params = {
         'r': 'v1/service/index',
-        'key': 'fa8d252239223cc17e1540406094ce72'
+        'key': config.sexysmm.api_key
     }
     async with aiohttp.ClientSession() as session:
         async with session.get(BASE_URL, params=params) as response:
@@ -83,14 +83,14 @@ async def testing():
             for service in data:
                 print(service, sep=' ')
 #
-# asyncio.run(testing())
+asyncio.run(testing())
 
 
 """
 Основа:
-{'service': 436, 'name': 'Реакции на пост (🔥)', 'category': 'Max', 'group': 'Реакции', 'rate': 0.5, 'min': 1, 'max': 10000}
-{'service': 437, 'name': 'Реакции на пост (❤️) ', 'category': 'Max', 'group': 'Реакции', 'rate': 0.5, 'min': 1, 'max': 10000}
-{'service': 438, 'name': 'Реакции на пост (👍)', 'category': 'Max', 'group': 'Реакции', 'rate': 0.5, 'min': 1, 'max': 10000}
+{'service': 268, 'name': 'Реакции на пост (🔥)', 'category': 'Telegram', 'group': 'Реакции', 'rate': 0.002, 'min': 1, 'max': 10000}
+{'service': 145, 'name': 'Реакция на пост (❤️) ', 'category': 'Telegram', 'group': 'Реакции', 'rate': 0.002, 'min': 1, 'max': 10000}
+{'service': 240, 'name': 'Реакции на пост (👍)', 'category': 'Telegram', 'group': 'Реакции', 'rate': 0.002, 'min': 1, 'max': 10000}
 
 Доп:
 {'service': 453, 'name': 'Реакции на пост (❤️\u200d🔥)', 'category': 'Telegram', 'group': 'Реакции', 'rate': 0.002, 'min': 1, 'max': 10000}
