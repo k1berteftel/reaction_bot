@@ -83,7 +83,7 @@ async def testing():
             for service in data:
                 print(service, sep=' ')
 #
-asyncio.run(testing())
+# asyncio.run(testing())
 
 
 """
