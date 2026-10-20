@@ -34,18 +34,16 @@ user_dialog = Dialog(
     Window(
         Const('Выберите доп. реакции для накрутки:'),
         Group(
-            Multiselect(
-                Format('✔️ {item[0]}'),
+            Select(
                 Format('{item[0]}'),
                 id='reactions_builder',
                 item_id_getter=lambda x: x[1],
                 items='items',
-                on_click=getters.select_channel_reaction,
-                min_selected=1
+                on_click=getters.select_channel_reaction
             ),
             width=2
         ),
-        SwitchTo(Const('Сохранить выбор'), id='get_channel_amount_switcher', state=startSG.get_channel_amount),
+        Button(Const('Сохранить выбор'), id='get_channel_amount_switcher', on_click=getters.get_channel_amount_switcher),
         SwitchTo(Const('◀️Назад'), id='back_get_channel', state=startSG.get_channel),
         getter=getters.channel_reaction_getters,
         state=startSG.select_channel_reaction

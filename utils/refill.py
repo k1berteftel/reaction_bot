@@ -19,8 +19,80 @@ REDUCTION_PERIODS = [
     (10, 0, 10, 7),
     (12, 0, 12, 7),
     (15, 0, 15, 7),
-    (18, 0, 18, 7),
+    (18, 0, 18, 7)
 ]
+
+
+TASKS = [
+    {
+        'percent': 10,
+        'delay': 60 * 3
+    },
+    {
+        'percent': 10,
+        'delay': 60 * 15
+    },
+    {
+        'percent': 10,
+        'delay': 60 * 40
+    },
+    {
+        'percent': 20,
+        'delay': 60 * 60 * 1.5
+    },
+    {
+        'percent': 20,
+        'delay': 60 * 60 * 3
+    },
+    {
+        'percent': 15,
+        'delay': 60 * 60 * 3.5
+    },
+    {
+        'percent': 10,
+        'delay': 60 * 60 * 4.5
+    },
+    {
+        'percent': 5,
+        'delay': 60 * 60 * 5.5
+    }
+]
+
+
+# TASKS = [  # тестовые
+#     {
+#         'percent': 10,
+#         'delay': 3
+#     },
+#     {
+#         'percent': 10,
+#         'delay': 15
+#     },
+#     {
+#         'percent': 10,
+#         'delay': 40
+#     },
+#     {
+#         'percent': 20,
+#         'delay': 60
+#     },
+#     {
+#         'percent': 20,
+#         'delay': 61
+#     },
+#     {
+#         'percent': 15,
+#         'delay': 61
+#     },
+#     {
+#         'percent': 10,
+#         'delay': 61
+#     },
+#     {
+#         'percent': 5,
+#         'delay': 60
+#     }
+# ]
 
 
 def is_reduction_period(now: datetime | None = None) -> bool:
@@ -34,42 +106,31 @@ def is_reduction_period(now: datetime | None = None) -> bool:
     return False
 
 
-def get_amount(base_amount: int, percent: float) -> int:
-    amount = int(base_amount * percent / 100)
+def get_amount(base_amount: int, percent: float | int, task_percent: int) -> int:
+    base_amount = int(base_amount * percent / 100)
+    amount = int(base_amount * task_percent / 100)
     if is_reduction_period():
         amount = int(amount * 0.1)  # сокращение на 90%
     return amount
 
 
-def take_random(lst, k=3):
-    sub_reactions = random.sample(lst, min(k, len(lst)))
+def take_random(lst):
+    sub_reactions = random.sample(lst, random.randint(1, len(lst)))
     random.shuffle(sub_reactions)
     return sub_reactions
 
 
-async def create_refill_task(channel_id: int, post_link: str, session: DataInteraction, bot: Bot):
+async def wait_for_task(func, delay: int | float, *args):
+    await asyncio.sleep(delay)
+    await func(*args)
+
+
+async def process_refill_task(channel_id: int, post_link: str, reactions: list[dict], percent: int, bot: Bot, session: DataInteraction):
     channel = await session.get_channel_by_channel_id(channel_id)
-
-    # расчет процентиля основных реакций
-    reactions = list(MAIN_REACTIONS.copy())
-    random.shuffle(reactions)
-    # print(reactions)
-
-    main_reaction_1 = {'service_id': MAIN_REACTIONS[reactions[0]].get('service_id'), 'percent': random.randint(30, 40)}
-    main_reaction_2 = {'service_id': MAIN_REACTIONS[reactions[1]].get('service_id'), 'percent': random.randint(25, 35)}
-    main_reaction_3 = {'service_id': MAIN_REACTIONS[reactions[2]].get('service_id'), 'percent': 85 - random.randint(30, 40)}
-    main_reactions = [main_reaction_1, main_reaction_2, main_reaction_3]
-
-    # расчет процентиля доп реакций
-    sub_reactions = take_random(list(channel.reactions))
-    sub_reactions = [{'service_id': SUB_REACTIONS[reaction].get('service_id'), 'percent': round(15 / len(list(sub_reactions)), 2)} for reaction in sub_reactions]
-
-    # основной блок выполнения задач
-    # print('here')
     counter = 1
     failed_tasks = []
-    for reaction in main_reactions + sub_reactions:
-        amount = get_amount(channel.amount, reaction.get('percent'))
+    for reaction in reactions:
+        amount = get_amount(channel.amount, reaction.get('percent'), percent)
         logger.info(f"{int(reaction.get('service_id'))} | {post_link} | {amount}")
         try:
             result = await create_task(
@@ -91,7 +152,7 @@ async def create_refill_task(channel_id: int, post_link: str, session: DataInter
 
     error = False
     for reaction in failed_tasks:
-        amount = get_amount(channel.amount, reaction.get('percent'))
+        amount = get_amount(channel.amount, reaction.get('percent'), percent)
         try:
             result = await create_task(
                 service_id=int(reaction.get('service_id')),
@@ -113,3 +174,33 @@ async def create_refill_task(channel_id: int, post_link: str, session: DataInter
                 )
             except Exception:
                 ...
+
+
+async def create_refill_task(channel_id: int, post_link: str, session: DataInteraction, bot: Bot):
+    channel = await session.get_channel_by_channel_id(channel_id)
+
+    sub_reactions = take_random(list(channel.reactions))
+    sub_reactions = [
+        {'service_id': SUB_REACTIONS[reaction].get('service_id'), 'percent': round(15 / len(list(sub_reactions)), 2)}
+        for reaction in sub_reactions]
+    for task in TASKS:
+        reactions = list(MAIN_REACTIONS.copy())
+        random.shuffle(reactions)
+        main_reaction_1 = {'service_id': MAIN_REACTIONS[reactions[0]].get('service_id'), 'percent': random.randint(30, 40)}
+        main_reaction_2 = {'service_id': MAIN_REACTIONS[reactions[1]].get('service_id'), 'percent': random.randint(25, 35)}
+        main_reaction_3 = {'service_id': MAIN_REACTIONS[reactions[2]].get('service_id'), 'percent': 85 - random.randint(30, 40)}
+        main_reactions = [main_reaction_1, main_reaction_2, main_reaction_3]
+
+        process_task = asyncio.create_task(
+            wait_for_task(
+                process_refill_task,
+                task.get('delay'),
+                channel_id,
+                post_link,
+                main_reactions + sub_reactions,
+                task.get('percent'),
+                bot,
+                session
+            )
+        )
+        logger.info(f'task {process_task.get_name()} created')

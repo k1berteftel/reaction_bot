@@ -51,15 +51,32 @@ async def get_channel(msg: Message, widget: ManagedTextInput, dialog_manager: Di
 
 
 async def channel_reaction_getters(dialog_manager: DialogManager, **kwargs):
-    items = [(value.get('reaction'), key) for key, value in SUB_REACTIONS.items()]
+    reactions = dialog_manager.dialog_data.get('reactions')
+    if not reactions:
+        items = [(value.get('reaction'), key) for key, value in SUB_REACTIONS.items()]
+    else:
+        items = [(f"✔️ {value.get('reaction')}" if key in reactions else value.get('reaction'), key) for key, value in SUB_REACTIONS.items()]
     return {
         'items': items
     }
 
 
-async def select_channel_reaction(clb: CallbackQuery, widget: ManagedMultiselect, dialog_manager: DialogManager, item_id: str):
-    dialog_manager.dialog_data['reactions'] = widget.get_checked()
-    return
+async def select_channel_reaction(clb: CallbackQuery, widget: Select, dialog_manager: DialogManager, item_id: str):
+    reactions = dialog_manager.dialog_data.get('reactions', [])
+    if item_id not in reactions:
+        reactions.append(item_id)
+    else:
+        reactions.remove(item_id)
+    dialog_manager.dialog_data['reactions'] = reactions
+    await dialog_manager.switch_to(startSG.select_channel_reaction)
+
+
+async def get_channel_amount_switcher(clb: CallbackQuery, widget: Button, dialog_manager: DialogManager):
+    reactions = dialog_manager.dialog_data.get('reactions')
+    if len(reactions) < 1:
+        await clb.answer('Должна быть выбрана минимум одна доп. реакция')
+        return
+    await dialog_manager.switch_to(startSG.get_channel_amount)
 
 
 async def get_channel_amount(msg: Message, widget: ManagedTextInput, dialog_manager: DialogManager, text: str):
@@ -85,6 +102,7 @@ async def confirm_save_getter(dialog_manager: DialogManager, **kwargs):
     amount = dialog_manager.dialog_data.get('amount')
 
     channel = await bot.get_chat(channel_id)
+    print(reactions)
     reaction_text = ''.join(SUB_REACTIONS[reaction].get('reaction') for reaction in reactions)
 
     return {
@@ -211,7 +229,7 @@ async def watch_channels_getter(dialog_manager: DialogManager, **kwargs):
     text = ''
     for channel in channels:
         reaction_text = ''.join(SUB_REACTIONS[reaction].get('reaction') for reaction in channel.reactions)
-        text = f' - {channel.name}, {channel.amount} - {reaction_text}'
+        text += f' - {channel.name}, {channel.amount} - {reaction_text}\n'
     return {'text': text}
 
 
@@ -287,21 +305,35 @@ async def change_channel_amount(msg: Message, widget: ManagedTextInput, dialog_m
 
 
 async def change_channel_reaction_getter(dialog_manager: DialogManager, **kwargs):
-    items = [(value.get('reaction'), key) for key, value in SUB_REACTIONS.items()]
+    reactions = dialog_manager.dialog_data.get('reactions')
+    if not reactions:
+        items = [(value.get('reaction'), key) for key, value in SUB_REACTIONS.items()]
+    else:
+        items = [(f"✔️ {value.get('reaction')}" if key in reactions else value.get('reaction'), key) for key, value in
+                 SUB_REACTIONS.items()]
     return {
         'items': items
     }
 
 
 async def select_changed_channel_reaction(clb: CallbackQuery, widget: ManagedMultiselect, dialog_manager: DialogManager, item_id: str):
-    dialog_manager.dialog_data['reactions'] = widget.get_checked()
-    return
+    reactions = dialog_manager.dialog_data.get('reactions', [])
+    if item_id not in reactions:
+        reactions.append(item_id)
+    else:
+        reactions.remove(item_id)
+    dialog_manager.dialog_data['reactions'] = reactions
+    await dialog_manager.switch_to(startSG.change_channel_reactions)
 
 
 async def change_channel_reactions(clb: CallbackQuery, widget: Button, dialog_manager: DialogManager):
     session: DataInteraction = dialog_manager.middleware_data.get('session')
     channel_id = dialog_manager.dialog_data.get('channel_id')
     reactions = dialog_manager.dialog_data.get('reactions')
+
+    if len(reactions) < 1:
+        await clb.answer('Должна быть выбрана минимум одна доп. реакция')
+        return
 
     await session.set_channel_value(channel_id, 'reactions', reactions)
 
