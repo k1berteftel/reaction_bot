@@ -19,7 +19,8 @@ REDUCTION_PERIODS = [
     (10, 0, 10, 7),
     (12, 0, 12, 7),
     (15, 0, 15, 7),
-    (18, 0, 18, 7)
+    (18, 0, 18, 7),
+    (20, 0, 20, 7)
 ]
 
 
@@ -188,7 +189,8 @@ async def create_refill_task(channel_id: int, post_link: str, session: DataInter
         random.shuffle(reactions)
         main_reaction_1 = {'service_id': MAIN_REACTIONS[reactions[0]].get('service_id'), 'percent': random.randint(30, 40)}
         main_reaction_2 = {'service_id': MAIN_REACTIONS[reactions[1]].get('service_id'), 'percent': random.randint(25, 35)}
-        main_reaction_3 = {'service_id': MAIN_REACTIONS[reactions[2]].get('service_id'), 'percent': 85 - random.randint(30, 40)}
+        reaction_percent_3 = 85 - main_reaction_1.get('percent') - main_reaction_2.get('percent')
+        main_reaction_3 = {'service_id': MAIN_REACTIONS[reactions[2]].get('service_id'), 'percent': reaction_percent_3}
         main_reactions = [main_reaction_1, main_reaction_2, main_reaction_3]
 
         process_task = asyncio.create_task(
@@ -204,3 +206,31 @@ async def create_refill_task(channel_id: int, post_link: str, session: DataInter
             )
         )
         logger.info(f'task {process_task.get_name()} created')
+
+
+def test():
+    sub_reactions = take_random(list(['prayer', 'writing', 'cotton']))
+    sub_reactions = [
+        {'service_id': SUB_REACTIONS[reaction].get('service_id'), 'percent': round(15 / len(list(sub_reactions)), 2)}
+        for reaction in sub_reactions]
+    full_sum = 0
+    for task in TASKS:
+        reactions = list(MAIN_REACTIONS.copy())
+        random.shuffle(reactions)
+        main_reaction_1 = {'service_id': MAIN_REACTIONS[reactions[0]].get('service_id'), 'percent': random.randint(30, 40)}
+        main_reaction_2 = {'service_id': MAIN_REACTIONS[reactions[1]].get('service_id'), 'percent': random.randint(25, 35)}
+        main_reaction_3 = {'service_id': MAIN_REACTIONS[reactions[2]].get('service_id'), 'percent': 85 - random.randint(30, 40)}
+        main_reactions = [main_reaction_1, main_reaction_2, main_reaction_3]
+        print(f'Delay: {task.get("delay") / 60 / 60}H. Tasks:')
+        percent = task.get('percent')
+        for reaction in main_reactions + sub_reactions:
+            amount = get_amount(100, reaction.get('percent'), percent)
+            full_sum += amount
+            print(f"{int(reaction.get('service_id'))} | t.me://link | {amount}")
+            print(f"Sum: {full_sum}")
+        print('________________')
+
+    print(f"full sum: {full_sum}, task amount: 100")
+
+# test()
+
