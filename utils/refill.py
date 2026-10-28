@@ -189,8 +189,8 @@ async def create_refill_task(channel_id: int, post_link: str, session: DataInter
     for task in TASKS:
         reactions = list(MAIN_REACTIONS.copy())
         random.shuffle(reactions)
-        main_reaction_1 = {'service_id': MAIN_REACTIONS[reactions[0]].get('service_id'), 'percent': random.randint(30, 40)}
-        main_reaction_2 = {'service_id': MAIN_REACTIONS[reactions[1]].get('service_id'), 'percent': random.randint(25, 35)}
+        main_reaction_1 = {'service_id': MAIN_REACTIONS[reactions[0]].get('service_id'), 'percent': random.randint(40, 50)}
+        main_reaction_2 = {'service_id': MAIN_REACTIONS[reactions[1]].get('service_id'), 'percent': random.randint(20, 30)}
         reaction_percent_3 = 85 - main_reaction_1.get('percent') - main_reaction_2.get('percent')
         main_reaction_3 = {'service_id': MAIN_REACTIONS[reactions[2]].get('service_id'), 'percent': reaction_percent_3}
         main_reactions = [main_reaction_1, main_reaction_2, main_reaction_3]
