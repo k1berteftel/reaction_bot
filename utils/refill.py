@@ -107,10 +107,10 @@ def is_reduction_period(now: datetime | None = None) -> bool:
     return False
 
 
-def get_amount(base_amount: int, percent: float | int, task_percent: int) -> int:
+def get_amount(base_amount: int, percent: float | int, task_percent: int, reduction: bool) -> int:
     base_amount = int(base_amount * percent / 100)
     amount = int(base_amount * task_percent / 100)
-    if is_reduction_period():
+    if reduction:
         amount = int(amount * 0.1)  # сокращение на 90%
     return amount
 
@@ -126,12 +126,12 @@ async def wait_for_task(func, delay: int | float, *args):
     await func(*args)
 
 
-async def process_refill_task(channel_id: int, post_link: str, reactions: list[dict], percent: int, bot: Bot, session: DataInteraction):
+async def process_refill_task(channel_id: int, post_link: str, reactions: list[dict], percent: int, reduction: bool, bot: Bot, session: DataInteraction):
     channel = await session.get_channel_by_channel_id(channel_id)
     counter = 1
     failed_tasks = []
     for reaction in reactions:
-        amount = get_amount(channel.amount, reaction.get('percent'), percent)
+        amount = get_amount(channel.amount, reaction.get('percent'), percent, reduction)
         logger.info(f"{int(reaction.get('service_id'))} | {post_link} | {amount}")
         try:
             result = await create_task(
@@ -153,7 +153,7 @@ async def process_refill_task(channel_id: int, post_link: str, reactions: list[d
 
     error = False
     for reaction in failed_tasks:
-        amount = get_amount(channel.amount, reaction.get('percent'), percent)
+        amount = get_amount(channel.amount, reaction.get('percent'), percent, reduction)
         try:
             result = await create_task(
                 service_id=int(reaction.get('service_id')),
@@ -183,7 +183,9 @@ async def create_refill_task(channel_id: int, post_link: str, session: DataInter
     sub_reactions = take_random(list(channel.reactions))
     sub_reactions = [
         {'service_id': SUB_REACTIONS[reaction].get('service_id'), 'percent': round(15 / len(list(sub_reactions)), 2)}
-        for reaction in sub_reactions]
+        for reaction in sub_reactions
+    ]
+    is_reduction = is_reduction_period()
     for task in TASKS:
         reactions = list(MAIN_REACTIONS.copy())
         random.shuffle(reactions)
@@ -201,6 +203,7 @@ async def create_refill_task(channel_id: int, post_link: str, session: DataInter
                 post_link,
                 main_reactions + sub_reactions,
                 task.get('percent'),
+                is_reduction,
                 bot,
                 session
             )
@@ -224,7 +227,7 @@ def test():
         print(f'Delay: {task.get("delay") / 60 / 60}H. Tasks:')
         percent = task.get('percent')
         for reaction in main_reactions + sub_reactions:
-            amount = get_amount(100, reaction.get('percent'), percent)
+            amount = get_amount(100, reaction.get('percent'), percent, False)
             full_sum += amount
             print(f"{int(reaction.get('service_id'))} | t.me://link | {amount}")
             print(f"Sum: {full_sum}")
