@@ -248,14 +248,24 @@ async def create_refill_task(channel_id: int, post_link: str, session: DataInter
 
     is_reduction = is_reduction_period()
 
-    reactions = list(MAIN_REACTIONS.copy())
+    if is_reduction:
+        reactions = random.sample(list(MAIN_REACTIONS.copy()), 2)
+    else:
+        reactions = list(MAIN_REACTIONS.copy())
     random.shuffle(reactions)
     for task in TASKS:
-        main_reaction_1 = {'service_id': MAIN_REACTIONS[reactions[0]].get('service_id'), 'percent': random.randint(40, 50), 'reaction': MAIN_REACTIONS[reactions[0]].get('reaction')}
-        main_reaction_2 = {'service_id': MAIN_REACTIONS[reactions[1]].get('service_id'), 'percent': random.randint(20, 30), 'reaction': MAIN_REACTIONS[reactions[1]].get('reaction')}
-        reaction_percent_3 = 85 - main_reaction_1.get('percent') - main_reaction_2.get('percent')
-        main_reaction_3 = {'service_id': MAIN_REACTIONS[reactions[2]].get('service_id'), 'percent': reaction_percent_3, 'reaction': MAIN_REACTIONS[reactions[2]].get('reaction')}
-        main_reactions = [main_reaction_1, main_reaction_2, main_reaction_3]
+        if len(reactions) == 3:
+            main_reaction_1 = {'service_id': MAIN_REACTIONS[reactions[0]].get('service_id'), 'percent': random.randint(40, 50), 'reaction': MAIN_REACTIONS[reactions[0]].get('reaction')}
+            main_reaction_2 = {'service_id': MAIN_REACTIONS[reactions[1]].get('service_id'), 'percent': random.randint(20, 30), 'reaction': MAIN_REACTIONS[reactions[1]].get('reaction')}
+            reaction_percent_3 = 85 - main_reaction_1.get('percent') - main_reaction_2.get('percent')
+            main_reaction_3 = {'service_id': MAIN_REACTIONS[reactions[2]].get('service_id'), 'percent': reaction_percent_3, 'reaction': MAIN_REACTIONS[reactions[2]].get('reaction')}
+            main_reactions = [main_reaction_1, main_reaction_2, main_reaction_3]
+        else:
+            main_reaction_1 = {'service_id': MAIN_REACTIONS[reactions[0]].get('service_id'), 'percent': random.randint(55, 70), 'reaction': MAIN_REACTIONS[reactions[0]].get('reaction')}
+            reaction_percent_2 = 85 - main_reaction_1.get('percent')
+            main_reaction_2 = {'service_id': MAIN_REACTIONS[reactions[1]].get('service_id'),
+                               'percent': reaction_percent_2, 'reaction': MAIN_REACTIONS[reactions[1]].get('reaction')}
+            main_reactions = [main_reaction_1, main_reaction_2]
 
         # ДОБАВЛЕНО: собираем все реакции задачи и проверяем сумму процентов
         all_reactions = main_reactions + sub_reactions
