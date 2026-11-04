@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 REDUCTION_PERIODS = [
-    (9, 0, 9, 7),
+    (8, 50, 8, 57),
     (10, 0, 10, 7),
     (12, 0, 12, 7),
     (15, 0, 15, 7),
@@ -260,12 +260,15 @@ async def create_refill_task(channel_id: int, post_link: str, session: DataInter
             reaction_percent_3 = 85 - main_reaction_1.get('percent') - main_reaction_2.get('percent')
             main_reaction_3 = {'service_id': MAIN_REACTIONS[reactions[2]].get('service_id'), 'percent': reaction_percent_3, 'reaction': MAIN_REACTIONS[reactions[2]].get('reaction')}
             main_reactions = [main_reaction_1, main_reaction_2, main_reaction_3]
-        else:
+        elif len(reactions) == 2:
             main_reaction_1 = {'service_id': MAIN_REACTIONS[reactions[0]].get('service_id'), 'percent': random.randint(55, 70), 'reaction': MAIN_REACTIONS[reactions[0]].get('reaction')}
             reaction_percent_2 = 85 - main_reaction_1.get('percent')
             main_reaction_2 = {'service_id': MAIN_REACTIONS[reactions[1]].get('service_id'),
                                'percent': reaction_percent_2, 'reaction': MAIN_REACTIONS[reactions[1]].get('reaction')}
             main_reactions = [main_reaction_1, main_reaction_2]
+        else:
+            main_reaction_1 = {'service_id': MAIN_REACTIONS[reactions[0]].get('service_id'), 'percent': 85, 'reaction': MAIN_REACTIONS[reactions[0]].get('reaction')}
+            main_reactions = [main_reaction_1]
 
         # ДОБАВЛЕНО: собираем все реакции задачи и проверяем сумму процентов
         all_reactions = main_reactions + sub_reactions
