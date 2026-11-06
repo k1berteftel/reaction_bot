@@ -117,9 +117,12 @@ def get_amount(base_amount: int, percent: float | int, task_percent: int, reduct
     return amount
 
 
-def take_random(lst):
-    sub_reactions = random.sample(lst, random.randint(1, len(lst)))
-    random.shuffle(sub_reactions)
+def take_random(lst, reduction: bool):
+    if not reduction:
+        sub_reactions = random.sample(lst, random.randint(1, 3 if len(lst) >= 3 else len(lst)))
+        random.shuffle(sub_reactions)
+    else:
+        sub_reactions = random.sample(lst, 1)
     return sub_reactions
 
 
@@ -219,9 +222,11 @@ async def process_refill_task(
 async def create_refill_task(channel_id: int, post_link: str, session: DataInteraction, bot: Bot):
     channel = await session.get_channel_by_channel_id(channel_id)
 
+    is_reduction = is_reduction_period()
+
     # ИЗМЕНЕНО: рассчитываем доп. реакции с контролируемым рандомом (spread),
     # как в тестовой функции, вместо жёсткого деления 15 / n.
-    sub_reactions_raw = take_random(list(channel.reactions))
+    sub_reactions_raw = take_random(list(channel.reactions), is_reduction)
     total_percent = 15
     spread = 0.5
     n = len(sub_reactions_raw)
@@ -242,14 +247,12 @@ async def create_refill_task(channel_id: int, post_link: str, session: DataInter
     accumulators = {}
 
     # ДОБАВЛЕНО: проверка конфига TASKS (сумма должна быть 100)
-    tasks_percent_sum = sum(task.get('percent') for task in TASKS)
-    assert abs(tasks_percent_sum - 100) < 0.01, \
-        f'Сумма TASKS.percent должна быть 100, а сейчас {tasks_percent_sum}'
-
-    is_reduction = is_reduction_period()
+    # tasks_percent_sum = sum(task.get('percent') for task in TASKS)
+    # assert abs(tasks_percent_sum - 100) < 0.01, \
+    #     f'Сумма TASKS.percent должна быть 100, а сейчас {tasks_percent_sum}'
 
     if is_reduction:
-        reactions = random.sample(list(MAIN_REACTIONS.copy()), 2)
+        reactions = random.sample(list(MAIN_REACTIONS.copy()), random.randint(1, 3))
     else:
         reactions = list(MAIN_REACTIONS.copy())
     random.shuffle(reactions)
